@@ -17,8 +17,8 @@ class ServerHandler(selector: Selector, port: Int) extends KeyHandler with Stric
 
   override def process(): Unit = {
     val channel = serverSocketChannel.accept()
-    new ClientHandler(selector, channel)
-    logger.info("New incoming connection from {} (total connected clients: {})",
-      channel.getRemoteAddress, selector.keys().asScala.count(_.attachment().isInstanceOf[ClientHandler]))
+    new TlsProxyHandler(selector, channel)
+    logger.debug("New incoming connection from {} (total connected clients: {})",
+      channel.getRemoteAddress, selector.keys().asScala.count(_.attachment().isInstanceOf[TlsProxyHandler]))
   }
 }

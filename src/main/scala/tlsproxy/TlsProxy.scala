@@ -2,7 +2,9 @@ package tlsproxy
 
 import java.nio.channels.Selector
 
+import ch.qos.logback.classic.Level
 import com.typesafe.scalalogging.StrictLogging
+import org.slf4j.LoggerFactory
 
 trait KeyHandler {
   def process(): Unit
@@ -18,7 +20,7 @@ class TlsProxy(port: Int) extends StrictLogging with Runnable with AutoCloseable
 
   override def run(): Unit = {
     val selector = Selector.open
-    val server = new ServerHandler(selector, port)
+    new ServerHandler(selector, port)
 
     while (true) {
       if (selector.select(5000) > 0) {

@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.StrictLogging
 
 import scala.collection.JavaConverters._
 
-class ClientHandler(selector: Selector, socketChannel: SocketChannel) extends KeyHandler with StrictLogging {
+class EchoHandler(selector: Selector, socketChannel: SocketChannel) extends KeyHandler with StrictLogging {
   socketChannel.configureBlocking(false)
   private val peer = socketChannel.getRemoteAddress
   private val buffer = ByteBuffer.allocate((1 << 16) - 1)
@@ -54,10 +54,11 @@ class ClientHandler(selector: Selector, socketChannel: SocketChannel) extends Ke
   }
 
   def close(): Unit =
+    shutdown = true
     if (selectionKey.isValid) {
       selectionKey.cancel()
       socketChannel.close()
       logger.info("{} connection closed (total connected clients: {})",
-        peer, selector.keys().asScala.count(_.attachment().isInstanceOf[ClientHandler]) - 1)
+        peer, selector.keys().asScala.count(_.attachment().isInstanceOf[EchoHandler]) - 1)
     }
 }
