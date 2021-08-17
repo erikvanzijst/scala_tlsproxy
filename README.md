@@ -173,6 +173,15 @@ $ sbt publishSigned
 [success] Total time: 9 s, completed Aug 17, 2021 11:29:22 PM
 ```
 
+Now log in to https://s01.oss.sonatype.org, click on "Staging Repositories",
+select ours, then click `Close`, provide a short string and hit refresh to
+check if the deployment gets promoted successfully.
+
+When it closes successfully, hit `Release`. This makes the artifacts publicly
+available (and they can now be found with the artifact-search).
+
+Sonatype has a [video](https://www.youtube.com/watch?v=dXR4pJ_zS-0).
+
 Troubleshooting:
 
 * https://github.com/sbt/sbt-pgp#sbt-pgp
