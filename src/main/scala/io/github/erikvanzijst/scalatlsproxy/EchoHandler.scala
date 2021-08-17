@@ -1,4 +1,4 @@
-package tlsproxy
+package io.github.erikvanzijst.scalatlsproxy
 
 import java.io.IOException
 import java.nio.ByteBuffer

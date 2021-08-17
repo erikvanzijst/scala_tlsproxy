@@ -1,4 +1,4 @@
-package tlsproxy
+package io.github.erikvanzijst.scalatlsproxy
 
 import java.net.InetSocketAddress
 import java.nio.channels.{SelectionKey, Selector, ServerSocketChannel}

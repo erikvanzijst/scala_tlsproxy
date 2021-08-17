@@ -1,4 +1,4 @@
-package tlsproxy
+package io.github.erikvanzijst.scalatlsproxy
 
 import java.nio.ByteBuffer
 import java.nio.channels.{SelectionKey, SocketChannel}

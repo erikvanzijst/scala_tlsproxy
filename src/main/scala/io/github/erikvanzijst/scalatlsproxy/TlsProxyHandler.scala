@@ -1,4 +1,4 @@
-package tlsproxy
+package io.github.erikvanzijst.scalatlsproxy
 
 import java.io.IOException
 import java.net.InetSocketAddress
@@ -7,10 +7,10 @@ import java.nio.channels.{SelectionKey, Selector, SocketChannel, UnresolvedAddre
 import java.nio.charset.StandardCharsets
 
 import com.typesafe.scalalogging.StrictLogging
-import tlsproxy.TlsProxyHandler.userAgent
 
 import scala.collection.JavaConverters._
 import scala.util.Try
+import scala.util.matching.Regex
 
 object ProxyPhase extends Enumeration {
   type ProxyPhase = Value
@@ -18,12 +18,13 @@ object ProxyPhase extends Enumeration {
 }
 
 object TlsProxyHandler {
-  private val destPattern = "CONNECT ([^:]+):([0-9]+) HTTP/1.1".r
-  private val userAgent = "TlsProxy/1.0 (github.com/erikvanzijst/scala_tlsproxy)"
+  val destPattern: Regex = "CONNECT ([^:]+):([0-9]+) HTTP/1.1".r
+  val userAgent: String = "TlsProxy/1.0 (github.com/erikvanzijst/scala_tlsproxy)"
 }
 
 class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends KeyHandler with StrictLogging {
   import ProxyPhase._
+  import TlsProxyHandler._
 
   clientChannel.configureBlocking(false)
   private val peer = clientChannel.getRemoteAddress
@@ -49,7 +50,6 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends 
     if (!clientBuffer.hasRemaining)
       throw new IOException(s"$peer handshake overflow")
   }
-
 
   private def readLine(): Option[String] = {
     readClient()
@@ -169,9 +169,8 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends 
           clientChannel.write(serverBuffer)
           serverBuffer.compact()
 
-          if (serverBuffer.position() == 0) {
+          if (serverBuffer.position() == 0)
             close()
-          }
         }
 
     } catch {

@@ -1,10 +1,8 @@
-package tlsproxy
+package io.github.erikvanzijst.scalatlsproxy
 
 import java.nio.channels.Selector
 
-import ch.qos.logback.classic.Level
 import com.typesafe.scalalogging.StrictLogging
-import org.slf4j.LoggerFactory
 
 trait KeyHandler {
   def process(): Unit
