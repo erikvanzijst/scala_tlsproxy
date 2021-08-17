@@ -44,6 +44,17 @@ accept-ranges: bytes
 
 ## Library
 
+The project is published to Sonatype OSS:
+
+    Group id / organization: io.github.erikvanzijst
+    Artifact id / name: scala-tlsproxy
+
+sbt users may add this to their `build.sbt`:
+
+```
+libraryDependencies += "io.github.erikvanzijst" %% "scala-tlsproxy_2.12" % "0.1.0"
+```
+
 To use it as a library in-process:
 
 ```scala
@@ -52,8 +63,8 @@ import io.github.erikvanzijst.scalatlsproxy.TlsProxy
 new TlsProxy(3128).run()
 ```
 
-The `run()` does not create any threads and run the entire proxy on the
-calling thread. It does not return.
+The `run()` method does not create any threads and runs the entire proxy on
+the calling thread. It does not return.
 
 To move it to the background, pass it to a `Thread` or `Executor`:
 
@@ -68,7 +79,7 @@ executor.submit(new TlsProxy(3128))
 
 ## Caveat emptor
 
-This is only implements the `CONNECT` method and can therefor only proxy HTTPS
+This only implements the `CONNECT` method and can therefore only proxy HTTPS
 requests. It does not support unencrypted proxy requests using `GET`.
 
 Proxy requests for HTTP (non-TLS) `GET` requests result in an error and the
@@ -81,7 +92,7 @@ connection getting closed:
 
 ## Robustness (or lack thereof)
 
-* This implementation is totally susceptible to all kinds of [slowloris attacks](https://en.wikipedia.org/wiki/Slowloris_(computer_security).
+* This implementation is totally susceptible to all kinds of [slowloris attacks](https://en.wikipedia.org/wiki/Slowloris_%28computer_security%29)
 * It does not support client authentication
 * Uses only 1 thread and cannot currently scale to multiple cores
 * Does not restrict non-standard upstream ports
