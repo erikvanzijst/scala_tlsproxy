@@ -1,7 +1,7 @@
 package io.github.erikvanzijst.scalatlsproxy
 
 import java.io.IOException
-import java.net.InetSocketAddress
+import java.net.{InetSocketAddress, SocketAddress}
 import java.nio.ByteBuffer
 import java.nio.channels.{SelectionKey, Selector, SocketChannel, UnresolvedAddressException}
 import java.nio.charset.StandardCharsets
@@ -27,7 +27,7 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends 
   import TlsProxyHandler._
 
   clientChannel.configureBlocking(false)
-  private val peer = clientChannel.getRemoteAddress
+  private val clientAddress: SocketAddress = clientChannel.getRemoteAddress
 
   private val clientKey = clientChannel.register(selector, SelectionKey.OP_READ, this)  // client initiating the connection
   private val clientBuffer = ByteBuffer.allocate(1 << 16) // client-to-server
@@ -44,11 +44,19 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends 
 
   private var phase = Destination
 
+  def getServerAddress: String = Option(serverChannel)
+    .filter(_.isOpen)
+    .map(_.getRemoteAddress.toString)
+    .orElse(Option(destination)
+      .map(d => d._1 + ":" + d._2)
+      .orElse(Some("unconnected")) )
+    .get
+
   private def readClient(): Unit = {
     if (clientKey.isValid && clientKey.isReadable && clientChannel.read(clientBuffer) == -1)
-        throw new IOException(s"$peer unexpected EOF from client")
+        throw new IOException(s"$clientAddress unexpected EOF from client")
     if (!clientBuffer.hasRemaining)
-      throw new IOException(s"$peer handshake overflow")
+      throw new IOException(s"$clientAddress handshake overflow")
   }
 
   private def readLine(): Option[String] = {
@@ -82,14 +90,14 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends 
       "\r\n" +
       body).getBytes(StandardCharsets.US_ASCII)
 
-  override def process(): Unit = {
+  override def process(): Unit =
     try {
 
       if (phase == Destination)
         readLine().map(TlsProxyHandler.destPattern.findFirstMatchIn(_)).foreach {
           case Some(m) =>
             destination = (m.group(1), m.group(2).toInt)
-            logger.debug("{} wants to connect to {}:{}...", peer, destination._1, destination._2)
+            logger.debug("{} wants to connect to {}:{}...", clientAddress, destination._1, destination._2)
             phase = Headers
           case _ => throw new IOException(s"Malformed request")
         }
@@ -97,7 +105,7 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends 
       if (phase == Headers)
         Iterator.continually(readLine()).takeWhile(_.isDefined).flatten.foreach {
           case header if header == "" =>
-            logger.debug("{} all headers consumed, initiating upstream connection...", peer)
+            logger.debug("{} all headers consumed, initiating upstream connection...", clientAddress)
 
             serverChannel = SocketChannel.open()
             serverChannel.configureBlocking(false)
@@ -113,7 +121,7 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends 
               }
             }.recover {
               case _: UnresolvedAddressException =>
-                logger.info(s"{} cannot resolve {}", peer, destination._1)
+                logger.info(s"{} cannot resolve {}", clientAddress, destination._1)
                 startResponse(502, "Bad Gateway", s"Failed to resolve ${destination._1}")
                 Error
               case iae: IllegalArgumentException =>
@@ -121,7 +129,7 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends 
                 Error
             }.get
 
-          case header => logger.debug("{} ignoring header {}", peer, header)
+          case header => logger.debug("{} ignoring header {}", clientAddress, header)
         }
 
       if (phase == Connecting)
@@ -148,7 +156,7 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends 
             upstreamPipe = new Pipe(clientKey, clientChannel, serverKey, serverChannel)
             downstreamPipe = new Pipe(serverKey, serverChannel, clientKey, clientChannel)
 
-            logger.debug("{} 200 OK sent to client -- TLS connection to {} ready", peer, serverChannel.getRemoteAddress)
+            logger.debug("{} 200 OK sent to client -- TLS connection to {} ready", clientAddress, getServerAddress)
             phase = Established
           }
         }
@@ -158,7 +166,7 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends 
         downstreamPipe.process()
         if (upstreamPipe.isClosed && downstreamPipe.isClosed) {
           logger.info("{} -> {} finished (up: {}, down: {})",
-            peer, serverChannel.getRemoteAddress, upstreamPipe.bytes, downstreamPipe.bytes)
+            clientAddress, getServerAddress, upstreamPipe.bytes, downstreamPipe.bytes)
           close()
         }
       }
@@ -175,10 +183,13 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends 
 
     } catch {
       case e: IOException =>
-        logger.error(s"$peer -> ${Option(destination).map(s => s"${s._1}:${s._2}").getOrElse("unconnected")}: error: connection closed: ${e.getClass.getName}: ${e.getMessage}")
+
+        val msg = s"$clientAddress -> $getServerAddress" +
+          (if (phase == Established) s" (up: ${upstreamPipe.bytes} down: ${downstreamPipe.bytes})" else "") +
+          s" connection failed: ${e.getClass.getSimpleName}: ${e.getMessage}"
+        logger.error(msg)
         close()
     }
-  }
 
   def close(): Unit = {
     shutdown = true
@@ -191,6 +202,6 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends 
       serverChannel.close()
     }
     logger.debug("{} connection closed (total connected clients: {})",
-      peer, selector.keys().asScala.count(_.attachment().isInstanceOf[TlsProxyHandler]) - 1)
+      clientAddress, selector.keys().asScala.count(_.attachment().isInstanceOf[TlsProxyHandler]) - 1)
   }
 }

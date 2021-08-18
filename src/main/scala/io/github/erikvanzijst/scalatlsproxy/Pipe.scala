@@ -28,13 +28,13 @@ class Pipe(fromKey: SelectionKey, fromChannel: SocketChannel, toKey: SelectionKe
       }
     }
 
-    if (toKey.isValid && toKey.isWritable) {
+    if (toKey.isValid && toKey.isWritable && buffer.position() > 0) {
       buffer.flip()
       toChannel.write(buffer)
       buffer.compact()
     }
 
-    if (shutdown && buffer.position() == 0) toChannel.shutdownOutput()
+    if (shutdown && buffer.position() == 0 && toChannel.isOpen) toChannel.shutdownOutput()
 
     if (toKey.isValid) {
       toKey.interestOps(

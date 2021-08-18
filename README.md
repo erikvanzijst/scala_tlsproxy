@@ -1,25 +1,46 @@
 # TLS  (HTTPS) Proxy Server in Scala
 
-Very simple HTTPS proxy server written in Scala 2.12 with no dependencies
-beyond `scala-logging` 
+Very simple HTTPS proxy server written in Scala 2.12 with no external
+dependencies beyond `scala-logging`.
 
 Can be used as a library, or as a standalone program.
 
 
 ## Standalone
 
+For a quick test, spin up the proxy using `sbt test`:
+
 ```
-$ sbt run
+$ sbt test
 [info] Loading global plugins from /Users/erik/.sbt/1.0/plugins
 [info] Loading project definition from /Users/erik/work/tlsproxy/project
 [info] Loading settings for project tlsproxy from build.sbt ...
 [info] Set current project to tlsproxy (in build file:/Users/erik/work/tlsproxy/)
-[info] Running tlsproxy.Main 
-14:31:46.707 [run-main-0] INFO tlsproxy.ServerHandler - Listening on port 3128...
-18:03:15.466 [main] INFO tlsproxy.ServerHandler - Listening on port 3128...
-18:03:22.651 [main] ERROR tlsproxy.TlsProxyHandler - /0:0:0:0:0:0:0:1:49672 -> google.com:443: error: connection closed: java.io.IOException: Connection reset by peer
-18:04:22.806 [main] INFO tlsproxy.TlsProxyHandler - /0:0:0:0:0:0:0:1:49818 -> www.google.com/172.217.6.36:443 finished (up: 581, down: 4294)
-18:04:56.131 [main] INFO tlsproxy.TlsProxyHandler - /0:0:0:0:0:0:0:1:49807 -> nginx.org/52.58.199.22:443 finished (up: 568, down: 187)
+21:49:37.534 INFO  i.g.e.s.ServerHandler - Listening on port 3128...
+21:49:46.411 INFO  i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:57870 -> f5.secure.force.com/13.110.3.182:443 finished (up: 8301, down: 7954)
+21:49:46.413 INFO  i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:57870 -> f5.secure.force.com:443 finished (up: 8301, down: 7954)
+21:49:48.948 INFO  i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:57882 -> bam.nr-data.net/162.247.242.18:443 finished (up: 1560, down: 3604)
+21:49:48.949 INFO  i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:57836 -> 4dcz.la1-c2-ph2.salesforceliveagent.com/13.110.3.5:443 finished (up: 1635, down: 3834)
+21:49:52.175 INFO  i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:57978 cannot resolve dpm.demdex.net
+21:49:52.373 INFO  i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:57949 -> match.prod.bidr.io/52.12.161.87:443 finished (up: 1348, down: 5675)
+21:49:52.373 INFO  i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:57924 -> mktg.biz.f5.com/152.199.2.76:443 finished (up: 1875, down: 37423)
+21:49:55.653 INFO  i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:57979 -> www.facebook.com/157.240.220.35:443 finished (up: 2795, down: 1453)
+21:49:55.661 ERROR i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:58006 -> f5.secure.force.com/13.110.3.182:443 (up: 6253 down: 47027) connection failed: IOException: Broken pipe
+21:49:55.989 INFO  i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:58001 -> bam.nr-data.net/162.247.242.18:443 finished (up: 2941, down: 3779)
+21:49:55.998 INFO  i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:58026 -> 653-smc-783.mktoresp.com/192.28.144.124:443 finished (up: 1566, down: 483)
+21:49:58.056 INFO  i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:58059 -> bam.nr-data.net/162.247.242.18:443 finished (up: 1761, down: 3570)
+21:49:58.202 INFO  i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:58079 -> d.la1-c2-ph2.salesforceliveagent.com/13.110.1.133:443 finished (up: 1352, down: 764)
+21:50:04.671 ERROR i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:58043 -> match.prod.bidr.io/52.12.161.87:443 (up: 1230 down: 484) connection failed: IOException: Connection reset by peer
+21:50:04.671 ERROR i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:58039 -> pixel.sitescout.com/216.65.25.160:443 (up: 1260 down: 430) connection failed: IOException: Connection reset by peer
+21:50:04.672 ERROR i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:58037 -> pixel.sitescout.com/216.65.25.160:443 (up: 1159 down: 440) connection failed: IOException: Connection reset by peer
+21:50:05.347 INFO  i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:58114 -> d.la1-c2-ph2.salesforceliveagent.com/13.110.1.133:443 finished (up: 1352, down: 764)
+21:50:06.488 INFO  i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:58124 cannot resolve dpm.demdex.net
+21:50:19.381 ERROR i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:58125 -> 4dcz.la1-c2-ph2.salesforceliveagent.com/13.110.3.5:443 (up: 4709 down: 1217) connection failed: IOException: Broken pipe
+21:50:36.432 ERROR i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:58298 -> unconnected connection failed: IOException: Malformed request
+21:52:22.311 INFO  i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:58634 -> bam.nr-data.net/162.247.242.19:443 finished (up: 1571, down: 3604)
+21:52:22.311 INFO  i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:58374 -> r3---sn-5hne6nsy.googlevideo.com/172.217.132.104:443 finished (up: 31807, down: 2165985)
+21:54:54.869 INFO  i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:58309 -> www.gstatic.com/142.250.65.67:443 finished (up: 1252, down: 1287)
+21:54:54.870 INFO  i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:58287 -> www.youtube.com/142.251.45.110:443 finished (up: 2690, down: 579159)
 ```
 
 Now configure `localhost:3128` as proxy in your browser.

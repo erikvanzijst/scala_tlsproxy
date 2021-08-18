@@ -5,8 +5,9 @@ version := "0.2.0-SNAPSHOT"
 
 scalaVersion := "2.12.14"
 
-libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
-libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
+libraryDependencies += "org.scalatest" %% "scalatest-funsuite" % "3.2.9" % "test"
+libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3" % "test"
+libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "[3.0,)"
 
 credentials += Credentials(Path.userHome / ".sbt" / "sonatype_credentials")
 
