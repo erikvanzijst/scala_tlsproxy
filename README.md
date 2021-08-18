@@ -73,7 +73,7 @@ The project is published to Sonatype OSS:
 sbt users may add this to their `build.sbt`:
 
 ```
-libraryDependencies += "io.github.erikvanzijst" %% "scala-tlsproxy_2.12" % "0.1.0"
+libraryDependencies += "io.github.erikvanzijst" %% "scala-tlsproxy_2.12" % "0.2.0"
 ```
 
 To use it as a library in-process:
@@ -107,7 +107,7 @@ Proxy requests for HTTP (non-TLS) `GET` requests result in an error and the
 connection getting closed:
 
 ```
-18:08:53.604 [main] ERROR tlsproxy.TlsProxyHandler - /0:0:0:0:0:0:0:1:51043 -> unconnected: error: connection closed: java.io.IOException: Malformed request
+23:16:25.375 ERROR i.g.e.s.TlsProxyHandler - /0:0:0:0:0:0:0:1:49603 -> unconnected connection failed: IOException: Malformed request
 ```
 
 
