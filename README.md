@@ -73,7 +73,7 @@ The project is published to Sonatype OSS:
 sbt users may add this to their `build.sbt`:
 
 ```
-libraryDependencies += "io.github.erikvanzijst" %% "scala-tlsproxy_2.12" % "0.2.0"
+libraryDependencies += "io.github.erikvanzijst" % "scala-tlsproxy_2.12" % "0.3.0"
 ```
 
 To use it as a library in-process:

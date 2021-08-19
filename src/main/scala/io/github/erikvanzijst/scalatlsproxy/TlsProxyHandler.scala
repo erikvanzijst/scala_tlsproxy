@@ -19,7 +19,7 @@ object ProxyPhase extends Enumeration {
 
 object TlsProxyHandler {
   val destPattern: Regex = "CONNECT ([^:]+):([0-9]+) HTTP/1.1".r
-  val userAgent: String = "TlsProxy/1.0 (github.com/erikvanzijst/scala_tlsproxy)"
+  val userAgent: String = "TlsProxy/0.3.0 (github.com/erikvanzijst/scala_tlsproxy)"
 }
 
 class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends KeyHandler with StrictLogging {
@@ -54,7 +54,7 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends 
 
   private def readClient(): Unit = {
     if (clientKey.isValid && clientKey.isReadable && clientChannel.read(clientBuffer) == -1)
-        throw new IOException(s"$clientAddress unexpected EOF from client")
+      throw new IOException(s"$clientAddress unexpected EOF from client")
     if (!clientBuffer.hasRemaining)
       throw new IOException(s"$clientAddress handshake overflow")
   }
@@ -183,11 +183,10 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends 
 
     } catch {
       case e: IOException =>
-
         val msg = s"$clientAddress -> $getServerAddress" +
           (if (phase == Established) s" (up: ${upstreamPipe.bytes} down: ${downstreamPipe.bytes})" else "") +
           s" connection failed: ${e.getClass.getSimpleName}: ${e.getMessage}"
-        logger.error(msg)
+        logger.warn(msg)
         close()
     }
 
