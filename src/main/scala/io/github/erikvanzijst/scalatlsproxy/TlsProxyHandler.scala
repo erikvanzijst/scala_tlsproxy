@@ -202,7 +202,8 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends 
       serverKey.cancel()
       serverChannel.close()
     }
-    logger.debug("{} connection closed (total connected clients: {})",
-      clientAddress, selector.keys().asScala.count(_.attachment().isInstanceOf[TlsProxyHandler]) - 1)
+    logger.debug("{} connection closed", clientAddress)
   }
+
+  override def toString: String = s"TlsProxyHandler(${clientAddress} -> ${getServerAddress})@${Integer.toHexString(hashCode)}"
 }
