@@ -12,13 +12,15 @@ trait KeyHandler {
 /** Creates a TLS Proxy instance.
   *
   * @param port
+  * @param interface  optional local interface address to bind to (e.g. 127.0.0.1, or ::1). Binds to all interface
+  *                   when omitted
   */
-class TlsProxy(port: Int) extends StrictLogging with Runnable with AutoCloseable {
+class TlsProxy(port: Int, interface: Option[String] = None) extends StrictLogging with Runnable with AutoCloseable {
   private var shutdown = false
 
   override def run(): Unit = {
     val selector = Selector.open
-    new ServerHandler(selector, port)
+    new ServerHandler(selector, port, interface)
 
     while (true) {
       if (selector.select(5000) > 0) {

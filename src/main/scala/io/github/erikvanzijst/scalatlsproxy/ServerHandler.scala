@@ -7,13 +7,18 @@ import com.typesafe.scalalogging.StrictLogging
 
 import scala.collection.JavaConverters._
 
-class ServerHandler(selector: Selector, port: Int) extends KeyHandler with StrictLogging {
+/** Creates a new server.
+  *
+  * @param interface  optional local interface address to bind to (e.g. 127.0.0.1, or ::1). Binds to all interface
+  *                   when omitted
+  */
+class ServerHandler(selector: Selector, port: Int, interface: Option[String] = None) extends KeyHandler with StrictLogging {
   private val serverSocketChannel = ServerSocketChannel.open
-  serverSocketChannel.socket.bind(new InetSocketAddress(port))
+  serverSocketChannel.socket.bind(interface.map(new InetSocketAddress(_, port)).getOrElse(new InetSocketAddress(port)))
   serverSocketChannel.configureBlocking(false)
 
   private val serverKey = serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, this)
-  logger.info("Listening on port {}...", port)
+  logger.info("Listening on {}...", serverSocketChannel.getLocalAddress)
 
   override def process(): Unit = {
     val channel = serverSocketChannel.accept()
