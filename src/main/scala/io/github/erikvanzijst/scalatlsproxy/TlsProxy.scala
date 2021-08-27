@@ -32,7 +32,5 @@ class TlsProxy(port: Int) extends StrictLogging with Runnable with AutoCloseable
     }
   }
 
-  override def close(): Unit = {
-    shutdown = true
-  }
+  override def close(): Unit = shutdown = true
 }

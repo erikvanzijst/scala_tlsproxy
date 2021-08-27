@@ -19,7 +19,7 @@ object ProxyPhase extends Enumeration {
 
 object TlsProxyHandler {
   val destPattern: Regex = "CONNECT ([^:]+):([0-9]+) HTTP/1.1".r
-  val userAgent: String = "TlsProxy/0.3.0 (github.com/erikvanzijst/scala_tlsproxy)"
+  val userAgent: String = "TlsProxy/0.4.0 (github.com/erikvanzijst/scala_tlsproxy)"
 }
 
 class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends KeyHandler with StrictLogging {
@@ -30,11 +30,11 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends 
   private val clientAddress: SocketAddress = clientChannel.getRemoteAddress
 
   private val clientKey = clientChannel.register(selector, SelectionKey.OP_READ, this)  // client initiating the connection
-  private val clientBuffer = ByteBuffer.allocate(1 << 16) // client-to-server
+  private val clientBuffer = ByteBuffer.allocate(1 << 15) // client-to-server
 
   private var serverKey: SelectionKey = _   // the upstream server
   private var serverChannel: SocketChannel = _
-  private val serverBuffer = ByteBuffer.allocate(1 << 16) // server-to-client
+  private val serverBuffer = ByteBuffer.allocate(1 << 10) // server-to-client
 
   private var upstreamPipe: Pipe = _
   private var downstreamPipe: Pipe = _
@@ -94,13 +94,15 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends 
     try {
 
       if (phase == Destination)
-        readLine().map(TlsProxyHandler.destPattern.findFirstMatchIn(_)).foreach {
-          case Some(m) =>
-            destination = (m.group(1), m.group(2).toInt)
-            logger.debug("{} wants to connect to {}:{}...", clientAddress, destination._1, destination._2)
-            phase = Headers
-          case _ => throw new IOException(s"Malformed request")
-        }
+        readLine().foreach(line =>
+          TlsProxyHandler.destPattern.findFirstMatchIn(line) match {
+            case Some(m) =>
+              destination = (m.group(1), m.group(2).toInt)
+              logger.debug("{} wants to connect to {}:{}...", clientAddress, destination._1, destination._2)
+              phase = Headers
+            case _ => throw new IOException(s"Unsupported method: ${line.split(' ')(0)}")
+          }
+        )
 
       if (phase == Headers)
         Iterator.continually(readLine()).takeWhile(_.isDefined).flatten.foreach {
