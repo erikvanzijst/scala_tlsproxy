@@ -30,11 +30,11 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends 
   private val clientAddress: SocketAddress = clientChannel.getRemoteAddress
 
   private val clientKey = clientChannel.register(selector, SelectionKey.OP_READ, this)  // client initiating the connection
-  private val clientBuffer = ByteBuffer.allocate(1 << 15) // client-to-server
+  private val clientBuffer = ByteBuffer.allocate(1 << 16) // client-to-server
 
   private var serverKey: SelectionKey = _   // the upstream server
   private var serverChannel: SocketChannel = _
-  private val serverBuffer = ByteBuffer.allocate(1 << 10) // server-to-client
+  private val serverBuffer = ByteBuffer.allocate(1 << 16) // server-to-client
 
   private var upstreamPipe: Pipe = _
   private var downstreamPipe: Pipe = _
@@ -155,8 +155,8 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends 
             clientKey.interestOps(SelectionKey.OP_READ)
             serverKey.interestOps(SelectionKey.OP_READ)
 
-            upstreamPipe = new Pipe(clientKey, clientChannel, serverKey, serverChannel)
-            downstreamPipe = new Pipe(serverKey, serverChannel, clientKey, clientChannel)
+            upstreamPipe = new Pipe(clientBuffer, clientKey, clientChannel, serverKey, serverChannel)
+            downstreamPipe = new Pipe(serverBuffer, serverKey, serverChannel, clientKey, clientChannel)
 
             logger.debug("{} 200 OK sent to client -- TLS connection to {} ready", clientAddress, getServerAddress)
             phase = Established

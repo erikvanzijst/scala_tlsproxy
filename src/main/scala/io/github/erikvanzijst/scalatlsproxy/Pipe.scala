@@ -5,10 +5,9 @@ import java.nio.channels.{SelectionKey, SocketChannel}
 
 import com.typesafe.scalalogging.StrictLogging
 
-class Pipe(fromKey: SelectionKey, fromChannel: SocketChannel, toKey: SelectionKey, toChannel: SocketChannel)
+class Pipe(buffer: ByteBuffer, fromKey: SelectionKey, fromChannel: SocketChannel, toKey: SelectionKey, toChannel: SocketChannel)
   extends KeyHandler with StrictLogging {
 
-  private val buffer = ByteBuffer.allocate(1 << 16)
   private var shutdown = false
   private var count: Long = 0
 
