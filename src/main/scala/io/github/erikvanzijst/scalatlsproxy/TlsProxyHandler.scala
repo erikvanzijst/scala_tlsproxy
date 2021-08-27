@@ -8,7 +8,6 @@ import java.nio.charset.StandardCharsets
 
 import com.typesafe.scalalogging.StrictLogging
 
-import scala.collection.JavaConverters._
 import scala.util.Try
 import scala.util.matching.Regex
 
@@ -22,7 +21,7 @@ object TlsProxyHandler {
   val userAgent: String = "TlsProxy/0.4.0 (github.com/erikvanzijst/scala_tlsproxy)"
 }
 
-class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends KeyHandler with StrictLogging {
+class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel, config: Config) extends KeyHandler with StrictLogging {
   import ProxyPhase._
   import TlsProxyHandler._
 
@@ -109,27 +108,34 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel) extends 
           case header if header == "" =>
             logger.debug("{} all headers consumed, initiating upstream connection...", clientAddress)
 
-            serverChannel = SocketChannel.open()
-            serverChannel.configureBlocking(false)
-            serverKey = serverChannel.register(selector, SelectionKey.OP_CONNECT, this)
-            clientKey.interestOps(0)  // stop reading while we connect upstream or server a response
+            if (!config.forwardFilter(clientAddress, destination)) {
+              logger.info(s"{} denied service to {}:{}", clientAddress, destination._1, destination._2)
+              startResponse(403, "Forbidden", s"${destination._1} not allowed")
+              phase = Error
 
-            phase = Try {
-              if (serverChannel.connect(new InetSocketAddress(destination._1, destination._2))) {
-                startResponse(200, "Connection Accepted", "")
-                Response
-              } else {
-                Connecting
-              }
-            }.recover {
-              case _: UnresolvedAddressException =>
-                logger.info(s"{} cannot resolve {}", clientAddress, destination._1)
-                startResponse(502, "Bad Gateway", s"Failed to resolve ${destination._1}")
-                Error
-              case iae: IllegalArgumentException =>
-                startResponse(400, "Bad Request", s"${iae.getMessage}\n")
-                Error
-            }.get
+            } else {
+              serverChannel = SocketChannel.open()
+              serverChannel.configureBlocking(false)
+              serverKey = serverChannel.register(selector, SelectionKey.OP_CONNECT, this)
+              clientKey.interestOps(0)  // stop reading while we connect upstream or server a response
+
+              phase = Try {
+                if (serverChannel.connect(new InetSocketAddress(destination._1, destination._2))) {
+                  startResponse(200, "Connection Accepted", "")
+                  Response
+                } else {
+                  Connecting
+                }
+              }.recover {
+                case _: UnresolvedAddressException =>
+                  logger.info(s"{} cannot resolve {}", clientAddress, destination._1)
+                  startResponse(502, "Bad Gateway", s"Failed to resolve ${destination._1}")
+                  Error
+                case iae: IllegalArgumentException =>
+                  startResponse(400, "Bad Request", s"${iae.getMessage}\n")
+                  Error
+              }.get
+            }
 
           case header => logger.debug("{} ignoring header {}", clientAddress, header)
         }

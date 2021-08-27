@@ -31,7 +31,7 @@ class ServerHandler(selector: Selector, port: Int, interface: Option[String] = N
       channel.close()
 
     } else {
-      connections += new TlsProxyHandler(selector, channel) {
+      connections += new TlsProxyHandler(selector, channel, config) {
         override def close(): Unit = {
           connections -= this
           super.close()
