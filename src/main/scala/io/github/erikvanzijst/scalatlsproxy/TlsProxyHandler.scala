@@ -26,7 +26,7 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel, config: 
   import TlsProxyHandler._
 
   clientChannel.configureBlocking(false)
-  private val clientAddress: SocketAddress = clientChannel.getRemoteAddress
+  val clientAddress: SocketAddress = clientChannel.getRemoteAddress
 
   private val clientKey = clientChannel.register(selector, SelectionKey.OP_READ, this)  // client initiating the connection
   private val clientBuffer = ByteBuffer.allocate(1 << 16) // client-to-server

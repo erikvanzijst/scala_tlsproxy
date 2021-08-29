@@ -1,9 +1,12 @@
 package io.github.erikvanzijst.scalatlsproxy
 
-import java.nio.channels.Selector
+import java.nio.channels.{Selector, SocketChannel}
 import com.typesafe.scalalogging.StrictLogging
 
 import java.net.SocketAddress
+import java.util.concurrent.{CountDownLatch, TimeUnit}
+import scala.collection.mutable
+import scala.concurrent.duration.Duration
 
 trait KeyHandler {
   def process(): Unit
@@ -29,14 +32,39 @@ case class Config(maxConnections: Int = 0,
 class TlsProxy(port: Int, interface: Option[String] = None, config: Config = Config())
   extends StrictLogging with Runnable with AutoCloseable {
 
+  private val connections = mutable.Set[TlsProxyHandler]()
+  private val selector = Selector.open
+  private val latch = new CountDownLatch(1)
+
+  private val server: ServerHandler = new ServerHandler(selector, port, interface) {
+    override def onNewConnection(channel: SocketChannel): Unit = {
+      val acceptable = config.acceptFilter(channel.getRemoteAddress)
+
+      if (!acceptable || (config.maxConnections > 0 && connections.size >= config.maxConnections)) {
+        logger.info(s"${channel.getRemoteAddress} rejected: " +
+          (if (!acceptable) "connection not allowed" else s"max connections reached: ${config.maxConnections}"))
+        channel.close()
+
+      } else {
+        connections += new TlsProxyHandler(selector, channel, config) {
+          override def close(): Unit = {
+            connections -= this
+            super.close()
+          }
+        }
+        logger.debug("New incoming connection from {} (total connected clients: {})",
+          channel.getRemoteAddress, connections.size)
+      }
+    }
+  }
+
   private var shutdown = false
+  private var force = false
 
-  override def run(): Unit = {
-    val selector = Selector.open
-    new ServerHandler(selector, port, interface, config)
+  override def run(): Unit = try {
 
-    while (true) {
-      if (selector.select(5000) > 0) {
+    while (!server.isClosed || connections.nonEmpty) {
+      if (selector.select(100) > 0) {
         val it = selector.selectedKeys().iterator()
         while (it.hasNext) {
           val key = it.next()
@@ -44,8 +72,42 @@ class TlsProxy(port: Int, interface: Option[String] = None, config: Config = Con
           it.remove()
         }
       }
+
+      if (shutdown) {
+        server.close()
+        if (force && connections.nonEmpty) {
+          logger.debug("Force-closing {} connections...", connections.size)
+          connections.foreach(_.close())
+        }
+      }
     }
+    logger.info("Shutdown successful")
+
+  } finally {
+    latch.countDown()
   }
 
-  override def close(): Unit = shutdown = true
+  def getConnectionCount: Int = connections.size
+
+  /** Schedule graceful shutdown of the proxy. Waits for all established connections to close.
+    *
+    * This method does not block. Actual shutdown occurs asynchronously. Use [[awaitShutdown]] to
+    * wait for all resources to get closed.
+    *
+    * Since proxy connections are often kept alive, there is no guarantee if or when the proxy
+    * actually terminates.
+    */
+  def close(): Unit = shutdown = true
+
+  /** Shut down the proxy and actively close any established connections.
+    *
+    * This method does not block. Actual shutdown occurs asynchronously. Use [[awaitShutdown]] to
+    * wait for all resources to get closed.
+    */
+  def closeNow(): Unit = if (!shutdown) {
+    shutdown = true
+    force = true
+  }
+
+  def awaitShutdown(timeout: Duration): Boolean = latch.await(timeout.toMillis, TimeUnit.MILLISECONDS)
 }
