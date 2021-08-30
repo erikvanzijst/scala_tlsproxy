@@ -104,7 +104,7 @@ class TlsProxy(port: Int, interface: Option[String] = None, config: Config = Con
     * This method does not block. Actual shutdown occurs asynchronously. Use [[awaitShutdown]] to
     * wait for all resources to get closed.
     */
-  def closeNow(): Unit = if (!shutdown) {
+  def closeNow(): Unit = {
     shutdown = true
     force = true
   }
