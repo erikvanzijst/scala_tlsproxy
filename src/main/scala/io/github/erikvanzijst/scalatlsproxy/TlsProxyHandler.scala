@@ -29,11 +29,11 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel, config: 
   val clientAddress: SocketAddress = clientChannel.getRemoteAddress
 
   private val clientKey = clientChannel.register(selector, SelectionKey.OP_READ, this)  // client initiating the connection
-  private val clientBuffer = ByteBuffer.allocate(1 << 16) // client-to-server
+  private val clientBuffer = ByteBuffer.allocate(1 << 15) // client-to-server
 
   private var serverKey: SelectionKey = _   // the upstream server
   private var serverChannel: SocketChannel = _
-  private val serverBuffer = ByteBuffer.allocate(1 << 16) // server-to-client
+  private val serverBuffer = ByteBuffer.allocate(1 << 15) // server-to-client
 
   private var upstreamPipe: Pipe = _
   private var downstreamPipe: Pipe = _
