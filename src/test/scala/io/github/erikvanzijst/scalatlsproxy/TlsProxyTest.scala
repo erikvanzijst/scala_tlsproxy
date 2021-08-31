@@ -45,8 +45,7 @@ class TlsProxyTest extends AnyFunSuite with BeforeAndAfter with StrictLogging {
       Thread.sleep(100)
 
       for (client <- managed(new Socket("localhost", proxyPort))) { // should get accepted...
-        val reader = new InputStreamReader(client.getInputStream)
-        assert(reader.read() == -1) // ...and immediately closed
+        assert(client.getInputStream.read() == -1) // ...and immediately closed
       }
     }
   }
@@ -65,7 +64,7 @@ class TlsProxyTest extends AnyFunSuite with BeforeAndAfter with StrictLogging {
         client2 <- managed(new Socket("localhost", proxyPort))
       } {
         // client2 should get accepted and immediately closed
-        assert(new InputStreamReader(client2.getInputStream).read() == -1, "Connection should have been closed")
+        assert(client2.getInputStream.read() == -1, "Connection should have been closed")
 
         // assert client1 still works:
         writer1.write("Hello\n")
@@ -100,16 +99,13 @@ class TlsProxyTest extends AnyFunSuite with BeforeAndAfter with StrictLogging {
         val writer = new OutputStreamWriter(client.getOutputStream, StandardCharsets.US_ASCII)
         val reader = new BufferedReader(new InputStreamReader(client.getInputStream))
 
-        writer.write(
-          s"CONNECT surely-this-doesnt-resolve:443 HTTP/1.1\r\n" +
-            "\r\n")
+        writer.write(s"CONNECT surely-this-doesnt-resolve:443 HTTP/1.1\r\n\r\n")
         writer.flush()
 
         val line = reader.readLine()
         assert("^HTTP/1.1 502 .+".r.findFirstMatchIn(line).isDefined, s"Unexpected connect response: $line")
 
-        // consume remaining headers and body
-        while (reader.readLine() != null) {}
+        while (reader.readLine() != null) {}  // consume remaining headers and body
       }
     }
   }
@@ -119,11 +115,13 @@ class TlsProxyTest extends AnyFunSuite with BeforeAndAfter with StrictLogging {
     val writer = new OutputStreamWriter(client.getOutputStream, StandardCharsets.US_ASCII)
     val reader = new BufferedReader(new InputStreamReader(client.getInputStream))
 
-    writer.write(
-      s"CONNECT $host:$port HTTP/1.1\r\n" +
-        "\r\n")
+    writer.write(s"CONNECT $host:$port HTTP/1.1\r\n\r\n")
     writer.flush()
-    readConnectResponse(reader)
+
+    val line = reader.readLine()
+    assert(connectPattern.findFirstMatchIn(line).isDefined, s"Unexpected connect response: $line")
+    while (reader.readLine() != "") {}  // consume remaining headers and body
+
     (client, writer, reader)
   }
 
@@ -131,12 +129,6 @@ class TlsProxyTest extends AnyFunSuite with BeforeAndAfter with StrictLogging {
     executor.shutdown()
     if (!executor.awaitTermination(1, TimeUnit.SECONDS))
       logger.error("Failed to shut down executor")
-  }
-
-  private def readConnectResponse(reader: BufferedReader): Unit = {
-    val line = reader.readLine()
-    assert(connectPattern.findFirstMatchIn(line).isDefined, s"Unexpected connect response: $line")
-    while (reader.readLine() != "") {}
   }
 
   private def getAvailablePort: Int = {
