@@ -3,7 +3,7 @@ package io.github.erikvanzijst.scalatlsproxy
 import java.nio.channels.{Selector, SocketChannel}
 import com.typesafe.scalalogging.StrictLogging
 
-import java.net.SocketAddress
+import java.net.InetSocketAddress
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
@@ -20,8 +20,8 @@ trait KeyHandler {
   *                       a boolean to allow or reject it.
   */
 case class Config(maxConnections: Int = 0,
-                  acceptFilter: SocketAddress => Boolean = _ => true,
-                  forwardFilter: (SocketAddress, (String, Int)) => Boolean = (_, _) => true)
+                  acceptFilter: InetSocketAddress => Boolean = _ => true,
+                  forwardFilter: (InetSocketAddress, (String, Int)) => Boolean = (_, _) => true)
 
 /** Creates a TLS Proxy instance.
   *
@@ -38,7 +38,7 @@ class TlsProxy(port: Int, interface: Option[String] = None, config: Config = Con
 
   private val server: ServerHandler = new ServerHandler(selector, port, interface) {
     override def onNewConnection(channel: SocketChannel): Unit = {
-      val acceptable = config.acceptFilter(channel.getRemoteAddress)
+      val acceptable = config.acceptFilter(channel.getRemoteAddress.asInstanceOf[InetSocketAddress])
 
       if (!acceptable || (config.maxConnections > 0 && connections.size >= config.maxConnections)) {
         logger.info(s"${channel.getRemoteAddress} rejected: " +

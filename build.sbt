@@ -1,7 +1,7 @@
 name := "scala-tlsproxy"
 organization := "io.github.erikvanzijst"
 
-version := "0.4.0"
+version := "0.4.1-SNAPSHOT"
 
 scalaVersion := "2.12.14"
 

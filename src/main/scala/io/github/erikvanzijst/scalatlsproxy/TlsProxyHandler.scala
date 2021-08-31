@@ -1,7 +1,7 @@
 package io.github.erikvanzijst.scalatlsproxy
 
 import java.io.IOException
-import java.net.{InetSocketAddress, SocketAddress}
+import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.{SelectionKey, Selector, SocketChannel, UnresolvedAddressException}
 import java.nio.charset.StandardCharsets
@@ -26,7 +26,7 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel, config: 
   import TlsProxyHandler._
 
   clientChannel.configureBlocking(false)
-  val clientAddress: SocketAddress = clientChannel.getRemoteAddress
+  val clientAddress: InetSocketAddress = clientChannel.getRemoteAddress.asInstanceOf[InetSocketAddress]
 
   private val clientKey = clientChannel.register(selector, SelectionKey.OP_READ, this)  // client initiating the connection
   private val clientBuffer = ByteBuffer.allocate(1 << 15) // client-to-server
