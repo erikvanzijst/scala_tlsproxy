@@ -18,7 +18,7 @@ object ProxyPhase extends Enumeration {
 
 object TlsProxyHandler {
   val destPattern: Regex = "CONNECT ([^:]+):([0-9]+) HTTP/1.1".r
-  val userAgent: String = "TlsProxy/0.4.0 (github.com/erikvanzijst/scala_tlsproxy)"
+  val userAgent: String = s"$NAME/$VERSION: $BUILD_DATE (github.com/erikvanzijst/scala_tlsproxy)"
 }
 
 class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel, config: Config) extends KeyHandler with StrictLogging {

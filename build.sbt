@@ -42,3 +42,14 @@ ThisBuild / publishTo := {
   else Some("releases" at nexus + "service/local/staging/deploy/maven2")
 }
 ThisBuild / publishMavenStyle := true
+
+Compile / resourceGenerators += Def.task {
+  import java.text.SimpleDateFormat
+  import java.util.Date
+
+  val file = (Compile / resourceManaged).value / "proxy.properties"
+  val contents = "name=%s\nversion=%s\nbuildDate=%s\n".format(
+    name.value, version.value, new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy").format(new Date()))
+  IO.write(file, contents)
+  Seq(file)
+}.taskValue
