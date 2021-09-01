@@ -1,8 +1,10 @@
 package io.github.erikvanzijst.scalatlsproxy
 
+import com.typesafe.scalalogging.Logger
+import org.slf4j.LoggerFactory
+
 import java.net.InetSocketAddress
 import java.nio.channels.{ClosedChannelException, SelectionKey, Selector, ServerSocketChannel, SocketChannel}
-import com.typesafe.scalalogging.StrictLogging
 
 /** Creates a new server.
   *
@@ -10,8 +12,9 @@ import com.typesafe.scalalogging.StrictLogging
   *                   when omitted
   */
 abstract class ServerHandler(selector: Selector, port: Int, interface: Option[String] = None)
-  extends KeyHandler with AutoCloseable with StrictLogging {
+  extends KeyHandler with AutoCloseable {
 
+  protected val logger: Logger = Logger(LoggerFactory.getLogger("io.github.erikvanzijst.scalatlsproxy.ServerHandler"))
   private val serverSocketChannel = ServerSocketChannel.open
   serverSocketChannel.socket.bind(interface.map(new InetSocketAddress(_, port)).getOrElse(new InetSocketAddress(port)))
   serverSocketChannel.configureBlocking(false)

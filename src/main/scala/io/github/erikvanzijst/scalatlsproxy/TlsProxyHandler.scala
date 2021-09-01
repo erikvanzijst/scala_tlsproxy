@@ -5,7 +5,8 @@ import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.{CancelledKeyException, SelectionKey, Selector, SocketChannel, UnresolvedAddressException}
 import java.nio.charset.StandardCharsets
-import com.typesafe.scalalogging.StrictLogging
+import com.typesafe.scalalogging.Logger
+import org.slf4j.LoggerFactory
 
 import scala.util.Try
 import scala.util.matching.Regex
@@ -20,9 +21,11 @@ object TlsProxyHandler {
   val userAgent: String = s"$NAME/$VERSION: $BUILD_DATE (github.com/erikvanzijst/scala_tlsproxy)"
 }
 
-class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel, config: Config) extends KeyHandler with StrictLogging {
+class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel, config: Config) extends KeyHandler {
   import ProxyPhase._
   import TlsProxyHandler._
+
+  protected val logger: Logger = Logger(LoggerFactory.getLogger("io.github.erikvanzijst.scalatlsproxy.TlsProxyHandler"))
 
   clientChannel.configureBlocking(false)
   val clientAddress: InetSocketAddress = clientChannel.getRemoteAddress.asInstanceOf[InetSocketAddress]

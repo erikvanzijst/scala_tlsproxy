@@ -38,7 +38,7 @@ new TlsProxy(3128).run()
 ```
 
 The `run()` method does not create any threads and runs the entire proxy on
-the calling thread. It does not return.
+the calling thread. It does not return until closed.
 
 To move it to the background, pass it to a `Thread` or `Executor`:
 
