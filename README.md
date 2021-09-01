@@ -6,20 +6,30 @@ dependencies beyond `scala-logging` and low resource overhead.
 Can be used as a library, or as a standalone program.
 
 
-## Library
+## Installation
 
-The project is published to Sonatype OSS:
-
-    Group id / organization: io.github.erikvanzijst
-    Artifact id / name: scala-tlsproxy
+Add as a dependency.
 
 sbt users may add this to their `build.sbt`:
 
-```
-libraryDependencies += "io.github.erikvanzijst" % "scala-tlsproxy_2.12" % "0.3.0"
+```scala
+libraryDependencies += "io.github.erikvanzijst" % "scala-tlsproxy_2.12" % "0.4.2"
 ```
 
-To use it as a library in-process:
+Maven:
+
+```xml
+<dependency>
+    <groupId>io.github.erikvanzijst</groupId>
+    <artifactId>scala-tlsproxy_2.12</artifactId>
+    <version>0.4.2</version>
+</dependency>
+```
+
+
+## Usage
+
+Instantiate the proxy:
 
 ```scala
 import io.github.erikvanzijst.scalatlsproxy.TlsProxy
