@@ -152,7 +152,7 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel, config: 
           }.get
 
       if (phase == Response)
-        if (clientKey.isWritable) {
+        if (clientKey.isValid && clientKey.isWritable) {
           serverBuffer.flip()
           clientChannel.write(serverBuffer)
           serverBuffer.compact()
@@ -180,7 +180,7 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel, config: 
       }
 
       if (phase == Error)
-        if (clientKey.isWritable) {
+        if (clientKey.isValid && clientKey.isWritable) {
           serverBuffer.flip()
           clientChannel.write(serverBuffer)
           serverBuffer.compact()
