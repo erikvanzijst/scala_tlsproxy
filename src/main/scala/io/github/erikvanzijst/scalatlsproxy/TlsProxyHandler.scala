@@ -3,9 +3,8 @@ package io.github.erikvanzijst.scalatlsproxy
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
-import java.nio.channels.{SelectionKey, Selector, SocketChannel, UnresolvedAddressException}
+import java.nio.channels.{CancelledKeyException, SelectionKey, Selector, SocketChannel, UnresolvedAddressException}
 import java.nio.charset.StandardCharsets
-
 import com.typesafe.scalalogging.StrictLogging
 
 import scala.util.Try
@@ -152,7 +151,7 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel, config: 
           }.get
 
       if (phase == Response)
-        if (clientKey.isValid && clientKey.isWritable) {
+        if (clientKey.isWritable) {
           serverBuffer.flip()
           clientChannel.write(serverBuffer)
           serverBuffer.compact()
@@ -180,7 +179,7 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel, config: 
       }
 
       if (phase == Error)
-        if (clientKey.isValid && clientKey.isWritable) {
+        if (clientKey.isWritable) {
           serverBuffer.flip()
           clientChannel.write(serverBuffer)
           serverBuffer.compact()
@@ -190,11 +189,10 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel, config: 
         }
 
     } catch {
-      case e: IOException =>
-        val msg = s"$clientAddress -> $getServerAddress" +
+      case e @ (_: IOException | _: CancelledKeyException) =>
+        logger.warn(s"$clientAddress -> $getServerAddress" +
           (if (phase == Established) s" (up: ${upstreamPipe.bytes} down: ${downstreamPipe.bytes})" else "") +
-          s" connection failed: ${e.getClass.getSimpleName}: ${e.getMessage}"
-        logger.warn(msg)
+          s" connection failed: ${e.getClass.getSimpleName}: ${e.getMessage}")
         close()
     }
 
