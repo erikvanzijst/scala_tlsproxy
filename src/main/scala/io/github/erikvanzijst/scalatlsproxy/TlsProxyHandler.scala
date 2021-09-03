@@ -45,13 +45,11 @@ class TlsProxyHandler(selector: Selector, clientChannel: SocketChannel, config: 
 
   private var phase = Destination
 
-  def getServerAddress: String = Option(serverChannel)
-    .filter(_.isOpen)
-    .map(_.getRemoteAddress.toString)
-    .orElse(Option(destination)
-      .map(d => d._1 + ":" + d._2)
-      .orElse(Some("unconnected")) )
-    .get
+  def getServerAddress: String =
+    Try(serverChannel.getRemoteAddress.toString)
+      .recover { case _ => destination._1 + ":" + destination._2 }
+      .recover { case _ => "unconnected" }
+      .get
 
   private def readClient(): Unit = {
     if (clientKey.isValid && clientKey.isReadable && clientChannel.read(clientBuffer) == -1)
